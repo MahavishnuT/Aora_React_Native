@@ -1,11 +1,13 @@
-import { View, Text, Image, ScrollView } from 'react-native';
+import { View, Text, Image, ScrollView, Alert } from 'react-native';
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FormField from '../../components/FormField';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 
 import { images } from '../../constants';
 import CustomButton from '../../components/CustomButton';
+import { createUser } from '../../lib/appwrite';
+import { setUser, setIsLoggedIn } from '../../context/GlobalProvider';
 
 const SignUp = () => {
   const [form, setForm] = useState({
@@ -14,11 +16,34 @@ const SignUp = () => {
     password: '',
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const submit = () => {
+  /**
+   * Handles the submission of the sign up form.
+   * If the form is empty, will alert the user to fill all fields.
+   * If the form is valid, will call createUser and if successful, redirect to /home
+   * If the form is invalid, will alert the user of the error
+   */
+  const submit = async () => {
+    if(form.username==="" || form.email==="" || form.password==="") {
+      Alert.alert('Error', 'Please fill in all fields');
+    }
 
-  }
+    setIsSubmitting(true);
+
+    try {
+      const result = await createUser(form.email, form.password, form.username);
+      setUser(result)
+      setIsLoggedIn(true)
+
+      router.replace('/home')
+    } catch (error) {
+      Alert.alert('Error', error.message)
+    } finally {
+      setIsSubmitting(false);
+    }
+
+  };
 
   return (
     <SafeAreaView className="bg-primary h-full">
@@ -53,16 +78,23 @@ const SignUp = () => {
             handleChangeText={(e) => setForm({ ...form, password: e })}
             otherStyles="mt-7"
           />
-          <CustomButton 
-            title="Sign in"
+          <CustomButton
+            title="Sign up"
             handlePress={submit}
             containerStyles="mt-7"
             isLoading={isSubmitting}
           />
 
           <View className="justify-center pt-5 flex-row gap-2">
-            <Text className="text-lg text-gray-100 font-pregular">Have an account already?</Text>
-            <Link href="/sign-in" className='text-lg font-psemibold text-secondary'>Sign In</Link>
+            <Text className="text-lg text-gray-100 font-pregular">
+              Have an account already?
+            </Text>
+            <Link
+              href="/sign-in"
+              className="text-lg font-psemibold text-secondary"
+            >
+              Sign In
+            </Link>
           </View>
         </View>
       </ScrollView>
